@@ -1,0 +1,34 @@
+{
+    "id": "opereto_worker_lib",
+    "globals": [
+
+    ],
+    "services": {
+
+        "install_opereto_worker_libs": {
+            "source_dir": "install_opereto_worker_libs",
+            "info": {
+              "summary": "Install opereto python virtual environment library"
+            }
+        },
+        "remove_opereto_worker_libs": {
+            "source_dir": "remove_opereto_worker_libs",
+            "info": {
+              "summary": "Remove opereto python virtual environment library"
+            }
+        }
+    },
+    "additional_info": {
+        "license": "Apache License 2.0"
+    },
+    "repository": {},
+    "name": "Opereto Worker Libs",
+    "summary": "This package installes and remove opereto official python virtualenv worker.",
+    "description": "This is Opereto official python worker. It is a python virtualenv based allowing isolation of the worker libs and dependencies from other python packages that may be installed on the worker host. Opereto provides a set of out-of-the-box services (in other packages) depending on this worker (e.g. generic test tools wrappers, container tools, cloud provisioning tool wrappers Etc). Opereto developers may easily extend this worker functionality adding more services running on it or they can build their own custom workers executing custom services.",
+    "version": "1.0.2",
+    "provider": "Opereto LTD",
+    "category": "Opereto Core Services",
+    "provider_url": "http://www.opereto.com",
+    "web_url": "https://github.com/opereto/worker",
+    "large_icon": "opereto_worker.png"
+}

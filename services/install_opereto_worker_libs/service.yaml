@@ -1,0 +1,8 @@
+cmd:
+  type: shell
+  command:
+    default: bash run.sh
+    windows: cmd /c run.bat
+    linux: bash run.sh
+timeout: 600
+type: action
