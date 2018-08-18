@@ -16,6 +16,12 @@
             "info": {
               "summary": "Remove opereto python virtual environment library"
             }
+        },
+        "generic_test_tool_executor": {
+            "source_dir": "generic_test_tool_executor",
+            "info": {
+                "summary": "A generic wrapper to command line test tools"
+            }
         }
     },
     "additional_info": {
