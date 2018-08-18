@@ -19,4 +19,4 @@ def raise_if_not_ubuntu():
 
 def raise_if_not_root():
     if not is_root():
-          raise OperetoRuntimeError(error='This operation requires root privileges. Please run the agent with root user')
+        raise OperetoRuntimeError(error='This operation requires root privileges. Please run the agent with root user')
