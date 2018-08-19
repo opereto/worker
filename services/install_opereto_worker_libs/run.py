@@ -29,7 +29,10 @@ def install_opereto_lib():
         'faker_schema': 'faker-schema==0.1.4',
         'docker': 'docker==3.1.4',
         'PIL': 'Pillow==2.9.0',
-        'boto3': 'boto3==1.7.39'
+        'boto3': 'boto3==1.7.39',
+        'httplib2': 'httplib2==0.11.3',
+        'oauth2client': 'oauth2client==4.1.2',
+        'apiclient': 'google-api-python-client==1.7.4'
     }
 
 
