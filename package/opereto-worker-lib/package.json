@@ -31,7 +31,7 @@
     "name": "Opereto Worker Libs",
     "summary": "This package installes and remove opereto official python virtualenv worker.",
     "description": "This is Opereto official python worker. It is a python virtualenv based allowing isolation of the worker libs and dependencies from other python packages that may be installed on the worker host. Opereto provides a set of out-of-the-box services (in other packages) depending on this worker (e.g. generic test tools wrappers, container tools, cloud provisioning tool wrappers Etc). Opereto developers may easily extend this worker functionality adding more services running on it or they can build their own custom workers executing custom services.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "provider": "Opereto LTD",
     "category": "Opereto Core Services",
     "provider_url": "http://www.opereto.com",
