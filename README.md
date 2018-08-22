@@ -17,7 +17,7 @@ The package includes two services:
 * [Learn more how to extend this package or build custom packages](http://help.opereto.com/support/solutions/articles/9000152584-build-and-maintain-custom-packages)
 
 
-#### Opereto worker container
+### Opereto worker container
 To run opereto worker as a container:
 
 * fetch opereto worker image
@@ -41,14 +41,14 @@ docker run -d --restart=always --env-file opereto_env/opereto.env opereto/worker
 
 For more information, see: http://help.opereto.com/support/solutions/articles/9000001855-install-and-run-agents
 
-You can also extend opereto Dockerfile to create your own custom workers while still including the Opereto worker python
+You may also extend opereto Dockerfile to create your own custom workers while still including the Opereto worker python
 virtualenv to remain compatible with opereto official packages
 
 ```
 FROM opereto/worker
 
 your docker file directives.. 
-(please make sure not to override opereto agent command. Avoi dspecifying CMD or ENTRYPOINT in your custom docker worker)
+(please make sure not to override opereto agent run command. Avoid specifying CMD or ENTRYPOINT in your custom docker worker)
 ...  
 ...
 
