@@ -71,7 +71,7 @@ class ServiceRunner(ServiceTemplate):
 
         def execute_tool():
             tool_execution_command = self.client.input['testing_tool_command']
-            cmd_pid = self.client.create_process('shell_command', default_command=tool_execution_command,
+            cmd_pid = self.client.create_process('shell_command', command=tool_execution_command,
                                                  valid_exit_codes=self.client.input['tool_valid_exit_codes'])
             if not self.client.is_success(cmd_pid):
                 raise OperetoRuntimeError(error='Failed to execute tool: %s' % tool_execution_command)

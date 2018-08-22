@@ -150,10 +150,10 @@ def install_opereto_lib():
         if WARNING:
             return 3
         else:
-            print 'Opereto python virtual environment installed successfuly at {}'.format(os.path.join(VIRT_ENV_DIR,release))
-            from pyopereto.client import OperetoClient
-            c = OperetoClient()
-            c.modify_agent_property(c.input['opereto_agent'], 'opereto.worker', True)
+            if os.environ.get('opereto_agent'):
+                from pyopereto.client import OperetoClient
+                c = OperetoClient()
+                c.modify_agent_property(c.input['opereto_agent'], 'opereto.worker', True)
             return 0
 
     except Exception, e:
