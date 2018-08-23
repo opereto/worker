@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-RUN apt-get -yy update && apt-get -yy upgrade && apt-get install -yy sudo && apt-get install -yy unzip && apt-get install -yy wget && apt-get install -yy python2.7
+RUN apt-get -yy update && apt-get -yy upgrade && apt-get install -yy sudo && apt-get install -yy unzip && apt-get install -y build-essential curl && apt-get install -yy python2.7
 
 ENV HOME /root
 WORKDIR /root
@@ -12,7 +12,6 @@ ENV opereto_service_version "default"
 COPY . ${opereto_workspace}/
 
 RUN cd $opereto_workspace && python2.7 -u run.py
-
 
 RUN cd /opt && \
     curl -O https://s3.amazonaws.com/opereto_downloads/opereto-agent-latest.tar.gz && \
