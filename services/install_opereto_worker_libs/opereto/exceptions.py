@@ -18,7 +18,7 @@ def raise_runtime_error(message):
 
 def raise_if_not_ubuntu():
     if not is_ubuntu():
-        raise OperetoRuntimeError(error='This operation is currently support only Ubuntu distributions')
+        raise OperetoRuntimeError(error='This operation currently supports only Ubuntu distributions')
 
 
 def raise_if_not_root():
