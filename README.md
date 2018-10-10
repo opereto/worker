@@ -21,22 +21,18 @@ The package includes two services:
 To run opereto worker as a container:
 
 * fetch opereto worker image
-```
+```console
 docker pull opereto/worker
 ```
 
-* create credential env file
-```
-opereto_host=https://OPERETO_URL
-opereto_user=OPERETO_USERNAME
-opereto_password=OPERETO_PASSWORD
-opereto_agent=my-agent-name
-
-```
 
 * run the worker container
+```console
+docker run -d --restart=always -e opereto_host='OPERETO_HOST_URL' -e opereto_user='OPERETO_USERNAME' -e opereto_password='OPERETO_PASSWORD' -e agent_name='AGENT_UUID' opereto/worker
 ```
-docker run -d --restart=always --env-file opereto_env/opereto.env opereto/worker
+For example:
+```console
+docker run -d --restart=always -e opereto_host='https://10.0.0.1' -e opereto_user='john' -e opereto_password='mypass123' -e agent_name='my_new_agent' opereto/worker
 ```
 
 For more information, see: http://help.opereto.com/support/solutions/articles/9000001855-install-and-run-agents

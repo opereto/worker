@@ -12,6 +12,10 @@ class OperetoRuntimeError(Exception):
         return json.dumps({'error' : self.error, 'description' : self.description, 'resources' : self.resources})
 
 
+def raise_runtime_error(message):
+    raise OperetoRuntimeError(error=message)
+
+
 def raise_if_not_ubuntu():
     if not is_ubuntu():
         raise OperetoRuntimeError(error='This operation currently supports only Ubuntu distributions')

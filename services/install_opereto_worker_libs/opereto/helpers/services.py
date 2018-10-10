@@ -33,6 +33,9 @@ class ServiceTemplate(object):
     def validate_input(self):
         pass
 
+    def _print_error(self, text):
+        print >> sys.stderr, text
+
     def _print_step_title(self, title):
         print('[OPERETO_HTML]<br><font style="color: #222; font-weight: 600; font-size: 13px;">{}</font>'.format(title))
 

@@ -14,13 +14,54 @@ default_variable_name_scheme = {
 }
 
 default_entity_name_scheme = {
-    "type" : "string",
+    "type" : ["string", "null"],
     "pattern": default_entity_name_pattern
 }
 
 default_entity_description_scheme = {
-    "type" : "string",
+    "type" : ["string", "null"],
     "maxLength": 10240
+}
+
+
+services_block_scheme = {
+    "type":"object",
+    "properties" : {
+        "input": {
+            "type" : ["object", "null"]
+        },
+        "service": {
+            "type" : "string",
+            "pattern": default_variable_pattern
+        },
+        "title": {
+            "type" : ["string","null"],
+            "pattern": default_entity_name_pattern
+        },
+        "agents": {
+            "type" : "string",
+            "pattern": default_variable_pattern
+        }
+    },
+    "required": ['service'],
+    "additionalProperties": True
+}
+
+included_services_scheme = {
+    'type': ['array', 'null'],
+    "items": [
+        services_block_scheme
+    ]
+}
+
+item_properties_scheme = {
+    "type":["object", "null"],
+    "patternProperties": {
+        default_variable_pattern: {
+            "type": ["object", "array", "string", "integer", "boolean","null"]
+        }
+    },
+    "additionalProperties": False
 }
 
 
