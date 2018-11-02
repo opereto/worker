@@ -1,18 +1,11 @@
 import os
 import uuid
-import shutil
-
-def zipfolder(zipname, target_dir):
-    if target_dir.endswith('/'):
-        target_dir = target_dir[:-1]
-    base_dir =  os.path.basename(os.path.normpath(target_dir))
-    root_dir = os.path.dirname(target_dir)
-    shutil.make_archive(zipname, "zip", root_dir, base_dir)
+from osutil import zip_folder
 
 
 def deploy_service(client, service_dir):
     zip_action_file = os.path.join('/tmp', str(uuid.uuid4())+'.action')
-    zipfolder(zip_action_file, service_dir)
+    zip_folder(zip_action_file, service_dir)
     print zip_action_file+'.zip'
     client.upload_service_version(service_zip_file=zip_action_file+'.zip')
 
