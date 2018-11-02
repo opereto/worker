@@ -9,7 +9,7 @@ import string
 from zipfile import ZipFile as zip
 import hashlib
 import platform
-from shell import  run_shell_cmd
+from opereto.utils.shell import run_shell_cmd
 
 DIST_RHEL6 = 'rhel6'
 DIST_RHEL7 = 'rhel7'
