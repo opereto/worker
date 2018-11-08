@@ -129,6 +129,12 @@ def extract_zip_file(file, extract_dir):
         else:
             z.extract(f, extract_dir)
 
+def zip_folder(zipname, target_dir):
+    if target_dir.endswith('/'):
+        target_dir = target_dir[:-1]
+    base_dir =  os.path.basename(os.path.normpath(target_dir))
+    root_dir = os.path.dirname(target_dir)
+    shutil.make_archive(zipname, "zip", root_dir, base_dir)
 
 def generate_random_key(length=15):
     if length<=36:
