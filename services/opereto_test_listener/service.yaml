@@ -1,0 +1,16 @@
+cmd:
+  type: python-venv
+  command:
+    default: python -u run.py
+  path:
+    default: ~/.opereto/operetovenv
+item_properties:
+- key: test_results_path
+  type: text
+  value:
+  editor: text
+  mandatory: true
+  direction: input
+  help: The path to test results directory
+timeout: 7200
+type: action

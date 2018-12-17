@@ -34,7 +34,7 @@ fi
 
 if [ $os_platform == "ubuntu" ]; then
 
-    if [[ $OSREL == *"Xenial"* ]]; then
+    if [[ $OSREL != *"Trusty"* ]]; then
         sudo apt-get install -y python2.7
         sudo sed -i 's/^mesg n || true$/tty -s \&\& mesg n/g' /root/.profile
     else

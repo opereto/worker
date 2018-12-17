@@ -8,6 +8,9 @@ from jsonschema.exceptions import *
 default_variable_pattern = "^[a-z]{1}[a-zA-Z0-9-_]{2,126}$"
 default_entity_name_pattern = "^.{0,256}$"
 
+process_result_keys = ['success', 'failure', 'warning', 'error', 'terminated', 'timeout']
+process_status_keys = process_result_keys + ['in_process', 'registered']
+
 default_variable_name_scheme = {
     "type" : "string",
     "pattern": default_variable_pattern

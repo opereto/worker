@@ -1,10 +1,12 @@
 import os,sys, traceback
 import platform
 
+FAILURE=False
+
 
 def install_opereto_lib():
 
-    WARNING=False
+
     LIB_DIR = os.path.join(os.environ['opereto_workspace'], 'opereto')
     VIRT_ENV_DIR = os.path.join(os.environ['opereto_home'], 'operetovenv')
 
@@ -23,7 +25,7 @@ def install_opereto_lib():
         'six': 'six==1.11.0',
         'sh': 'sh==1.12.14',
         'werkzeug': 'werkzeug==0.14.1',
-        'psutil': 'psutil=0.7.0',
+        'psutil': 'psutil==0.7.0',
         'dateutil': 'python-dateutil==2.7.3',
         'jsonschema': 'jsonschema==2.6.0',
         'faker_schema': 'faker-schema==0.1.4',
@@ -75,12 +77,12 @@ def install_opereto_lib():
 
 
     def _local(cmd, ignore=False):
-        global WARNING
+        global FAILURE
         print cmd
         ret = os.system(cmd)
         if int(ret)!=0 and not ignore:
             print 'Command ended with exit code: {}'.format(int(ret))
-            WARNING=True
+            FAILURE=True
         return ret
 
 
@@ -105,7 +107,7 @@ def install_opereto_lib():
         else:
             _local('cd %s && virtualenv venv && . venv/bin/activate && pip install --upgrade pip ; deactivate'%(directory),ignore=False)
             for import_name, module in module_to_install.items():
-                _local('cd %s && . venv/bin/activate && pip install %s && deactivate'%(directory, module),ignore=False)
+                _local('cd %s && . venv/bin/activate && pip install %s && deactivate'%(directory, module),ignore=True)
                 if _local('cd %s && . venv/bin/activate && python -c "import %s" && deactivate'%(directory, import_name))!=0:
                     print >> sys.stderr, 'Python module [%s] is not installed.'%module
 
@@ -130,11 +132,11 @@ def install_opereto_lib():
         if is_ubuntu():
             (name, version,id) = get_current_os()
             install_list = 'sudo apt-get install -qy python-six curl python-setuptools gcc build-essential python-dev python-pip libffi-dev libssl-dev'
-            _local(install_list,ignore=True)
-            _local('sudo pip install virtualenv', ignore=True)
+            _local(install_list,ignore=False)
+            _local('sudo pip install virtualenv', ignore=False)
 
         elif is_windows():
-            _local('pip install virtualenv', ignore=True)
+            _local('pip install virtualenv', ignore=False)
             _local('pip install pyopereto')
 
         else:
@@ -147,7 +149,7 @@ def install_opereto_lib():
         current_version_dir= os.path.join(VIRT_ENV_DIR,release)
         create_virtual_rlauto_env(current_version_dir)
 
-        if WARNING:
+        if FAILURE:
             return 3
         else:
             if os.environ.get('opereto_agent'):
