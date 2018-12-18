@@ -1,0 +1,26 @@
+item_properties:
+- key: test_input
+  type: json
+  value:
+  editor: json
+  mandatory: false
+  direction: input
+  help: Test input json
+
+- key: test_output
+  type: json
+  value:
+  editor: hidden
+  mandatory: false
+  direction: output
+  help: Test output json
+
+- key: testname
+  type: text
+  value:
+  mandatory: true
+  direction: input
+  help: A unique test name
+
+timeout: 10000000
+type: record

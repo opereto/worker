@@ -17,10 +17,12 @@ DIST_CENTOS6 = 'centos6'
 DIST_CENTOS7 = 'centos7'
 DIST_TRUSTY = 'trusty'
 DIST_XENIAL= 'xenial'
+DIST_BIONIC= 'bionic'
+
 
 centos_dist = [DIST_CENTOS6, DIST_CENTOS7]
 rhel_dist = [DIST_RHEL6, DIST_RHEL7]
-ubuntu_dist = [DIST_TRUSTY, DIST_XENIAL]
+ubuntu_dist = [DIST_TRUSTY, DIST_XENIAL, DIST_BIONIC]
 
 
 def is_root():
@@ -195,6 +197,8 @@ def get_platform_name():
             return DIST_XENIAL
         elif id=='trusty':
             return DIST_TRUSTY
+        elif id=='bionic':
+            return DIST_BIONIC
 
     elif name == 'Red Hat Enterprise Linux Server':
         if version.startswith('6'):
