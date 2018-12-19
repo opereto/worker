@@ -12,5 +12,14 @@ item_properties:
   mandatory: true
   direction: input
   help: The path to test results directory
+- key: parent_pid
+  type: text
+  value:
+  editor: text
+  mandatory: false
+  direction: input
+  help: Opereto process parent id for test records. If specified, the listener creates new record as direct child processes of that parent process. Otherwise, the listener is the parent process.
+
+
 timeout: 10000000
 type: action
