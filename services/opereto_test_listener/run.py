@@ -101,7 +101,7 @@ class ServiceRunner(ServiceTemplate):
         print('[OPERETO_HTML]<br><a href="{}"><font style="color: #222; font-weight: 600; font-size: 13px;">{}</font></a>'.format(link['url'], link['name']))
 
 
-    def _append_to_process_log(self, pid, loglines):
+    def _append_to_process_log(self, pid, loglines, log_level='info'):
         log_request_data = {
             'sflow_id': self.input['opereto_source_flow_id'],
             'pflow_id': self.input['opereto_parent_flow_id'],
@@ -114,7 +114,7 @@ class ServiceRunner(ServiceTemplate):
             try:
                 millis = int(round(time.time() * 1000)) + count
                 log_request_data['data'].append({
-                    'level': 'info',
+                    'level': log_level,
                     'text': line.strip(),
                     'timestamp': millis
                 })
@@ -157,7 +157,8 @@ class ServiceRunner(ServiceTemplate):
             results_dir = os.path.join(self.test_results_dir, testname)
             if os.path.exists(results_dir):
                 output_json_file = os.path.join(results_dir, 'output.json')
-                log_file = os.path.join(results_dir, 'log.txt')
+                stdout_log_file = os.path.join(results_dir, 'stdout.log')
+                stderr_log_file = os.path.join(results_dir, 'stderr.log')
                 summary_file = os.path.join(results_dir, 'summary.txt')
 
                 if os.path.exists(output_json_file):
@@ -176,20 +177,25 @@ class ServiceRunner(ServiceTemplate):
                             self.client.modify_process_summary(pid, summary)
                             self._state[testname]['summary_md5'] = summary_md5
 
-                if os.path.exists(log_file):
-                    with open(log_file, 'r') as lf:
-                        count=1
-                        loglines=[]
-                        for line in lf.readlines():
-                            if count>=self._state[testname]['last_log_line']:
-                                if count>9900:
-                                    message = 'Test log is too long. Please save test log in remote storage and add a link to it in Opereto log. See service info to learn how to add links to your tests.json file.'
-                                    loglines.append('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(message))
-                                    break
-                                loglines.append(line.strip())
-                            count+=1
-                        self._append_to_process_log(pid, loglines)
-                        self._state[testname]['last_log_line']=count
+
+                for log_file in [stdout_log_file, stderr_log_file]:
+                    log_level = 'info'
+                    if log_file==stderr_log_file:
+                        log_level='error'
+                    if os.path.exists(log_file):
+                        with open(log_file, 'r') as lf:
+                            count=1
+                            loglines=[]
+                            for line in lf.readlines():
+                                if count>=self._state[testname]['last_log_line']:
+                                    if count>9900:
+                                        message = 'Test log is too long. Please save test log in remote storage and add a link to it in Opereto log. See service info to learn how to add links to your tests.json file.'
+                                        loglines.append('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(message))
+                                        break
+                                    loglines.append(line.strip())
+                                count+=1
+                            self._append_to_process_log(pid, loglines, log_level)
+                            self._state[testname]['last_log_line']=count
 
             if status in self.result_keys:
                 links=[]
@@ -256,6 +262,7 @@ class ServiceRunner(ServiceTemplate):
 
     def teardown(self):
         remove_directory_if_exists(self.input['test_results_path'])
+        self._print_step_title('Opereto test listener stopped.')
 
 
 if __name__ == "__main__":

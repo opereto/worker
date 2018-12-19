@@ -12,5 +12,5 @@ item_properties:
   mandatory: true
   direction: input
   help: The path to test results directory
-timeout: 7200
+timeout: 10000000
 type: action
