@@ -34,7 +34,8 @@ def install_opereto_lib():
         'boto3': 'boto3==1.7.39',
         'httplib2': 'httplib2==0.11.3',
         'oauth2client': 'oauth2client==4.1.2',
-        'apiclient': 'google-api-python-client==1.7.4'
+        'apiclient': 'google-api-python-client==1.7.4',
+        'junitparser': 'junitparser==1.2.2'
     }
 
 

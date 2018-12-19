@@ -41,11 +41,12 @@ path/to/test/results/directory/
     tests.json                     
     test_1:                        
         output.json
-        log.txt
+        stdout.log
+        stderr.log
         summary.txt
     test_2:                        
         output.json
-        log.txt
+        stdout.log
         summary.txt
     ...
 ```
