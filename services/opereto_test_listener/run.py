@@ -23,6 +23,9 @@ class ServiceRunner(ServiceTemplate):
                 "test_results_path": {
                     "type" : "string",
                     "minLength": 1
+                },
+                "parent_pid": {
+                    "type": "string"
                 }
             },
             "required": ['test_results_path'],
@@ -32,7 +35,7 @@ class ServiceRunner(ServiceTemplate):
         validator = JsonSchemeValidator(self.input, input_scheme)
         validator.validate()
 
-        self.test_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
+        self.parent_pid = self.input['parent_pid'] or self.input['pid']
         self.test_results_dir = self.input['test_results_path']
 
         if not os.path.exists(self.test_results_dir):
@@ -136,7 +139,7 @@ class ServiceRunner(ServiceTemplate):
         test_links = test_record.get('links') or []
 
         if testname not in self._state:
-            pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input)
+            pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=self.parent_pid)
             self._state[testname] = {
                 'pid': pid,
                 'status': 'in_process',
