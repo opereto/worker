@@ -2,6 +2,7 @@ from opereto.helpers.services import ServiceTemplate
 from opereto.utils.validations import JsonSchemeValidator, default_variable_name_scheme, default_entity_name_scheme, process_result_keys, process_status_keys
 from opereto.utils.osutil import get_file_md5sum, remove_directory_if_exists, make_directory
 from opereto.exceptions import raise_runtime_error
+from opereto.settings import MAX_LOG_LINES_PER_PROCESS
 from pyopereto.client import OperetoClient
 from opereto.exceptions import *
 import os, time, json
@@ -188,7 +189,7 @@ class ServiceRunner(ServiceTemplate):
                             loglines=[]
                             for line in lf.readlines():
                                 if count>=self._state[testname]['last_log_line']:
-                                    if count>9900:
+                                    if count>MAX_LOG_LINES_PER_PROCESS:
                                         message = 'Test log is too long. Please save test log in remote storage and add a link to it in Opereto log. See service info to learn how to add links to your tests.json file.'
                                         loglines.append('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(message))
                                         break
