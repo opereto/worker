@@ -1,0 +1,115 @@
+cmd:
+  type: python-venv
+  command:
+    default: python -u run.py
+  path:
+    default: ~/.opereto/operetovenv
+item_properties:
+
+
+-   editor: selectbox
+    key: deployment_operation
+    direction: input
+    mandatory: true
+    type: text
+    store:
+        Create: create
+        Modify: modify
+        Delete: delete
+    value: create
+    help: Deployment operation to perform
+
+-   editor: text
+    key: deployment_name
+    direction: input
+    mandatory: true
+    type: text
+    value:
+    help: Stateful set name, must start and end with small letter and contain only small letters and dash
+
+-   editor: text
+    key: worker_image
+    direction: input
+    mandatory: true
+    type: text
+    value:
+    help: The worker image (e.g. opereto/gcp)
+
+-   editor: number
+    key: worker_replicas
+    direction: input
+    mandatory: true
+    type: integer
+    value: 1
+    help: The number of worker replicas, the minimum allowed is 1
+
+-   editor: text
+    key: worker_image_memory
+    direction: input
+    mandatory: true
+    type: text
+    value: 4Gi
+    help: The worker pod memory allocation
+
+-   editor: text
+    key: worker_config
+    direction: input
+    mandatory: true
+    type: text
+    value: worker-config
+    help: The worker secret configmap holding the Opereto access credential
+
+-   editor: text
+    key: agent_java_config
+    direction: input
+    mandatory: true
+    type: text
+    value: -Xms1000m -Xmx1000m
+    help: The worker agent JAVA config
+
+-   editor: text
+    key: agent_log_level
+    direction: input
+    mandatory: true
+    type: text
+    value: info
+    help: The worker agent log level (info. error, debug, warn, fatal)
+
+-   editor: text
+    key: storage_size
+    direction: input
+    mandatory: true
+    type: text
+    value: 4Gi
+    help: The worker pod persistant disk storage allocation
+
+-   editor: text
+    key: storage_class_name
+    direction: input
+    mandatory: true
+    type: text
+    value: worker-ssd
+    help: The worker pod storage class
+
+-   editor: json
+    key: volumes_mount
+    direction: input
+    mandatory: true
+    type: json
+    value: [{
+      "name": "data",
+      "mountPath": "/var/data"
+    }]
+    help: The worker pod volume mount
+
+-   editor: json
+    key: agent_properties
+    direction: input
+    mandatory: false
+    type: json
+    value: {}
+    help: A map of custom key-value properties to assign to each worker agent, useful for service-agent mapping
+
+
+timeout: 7200
+type: action
