@@ -39,21 +39,13 @@ def run_bg_shell_cmd(command, terminate_func=None, stdout_func=None, prefix=""):
 
 
 
-def run_shell_cmd(cmd, verbose=False):
+def run_shell_cmd(cmd, verbose=True):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if verbose:
-        print("pid %s: %s" % (p.pid, cmd))
-
-    if verbose:
-        print("Output:")
     out = []
     for line in p.stdout:
         if verbose:
             print(line)
         out.append(line)
-
-    if verbose:
-        print("\nErrors:")
     err = []
     for line in p.stderr:
         if verbose:

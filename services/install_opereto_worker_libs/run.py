@@ -35,7 +35,8 @@ def install_opereto_lib():
         'httplib2': 'httplib2==0.11.3',
         'oauth2client': 'oauth2client==4.1.2',
         'apiclient': 'google-api-python-client==1.7.4',
-        'junitparser': 'junitparser==1.2.2'
+        'junitparser': 'junitparser==1.2.2',
+        'kubernetes':'kubernetes==5.0.0'
     }
 
 
@@ -124,6 +125,7 @@ def install_opereto_lib():
 
     try:
         release=os.environ.get('opereto_service_version')
+
 
         ## check prerequisites
         if sys.version_info<(2,7):

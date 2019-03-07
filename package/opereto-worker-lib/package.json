@@ -17,12 +17,6 @@
               "summary": "Remove opereto python virtual environment library"
             }
         },
-        "generic_test_tool_executor": {
-            "source_dir": "generic_test_tool_executor",
-            "info": {
-                "summary": "A generic wrapper to command line test tools"
-            }
-        },
         "opereto_test_listener": {
             "source_dir": "opereto_test_listener",
             "info": {
@@ -34,6 +28,12 @@
             "info": {
                 "summary": "A generic test record used by the Opereto test listener to store test data"
             }
+        },
+        "opereto_worker_statefulset": {
+            "source_dir": "opereto_worker_statefulset",
+            "info": {
+                "summary": "Manages worker stateful sets used by Opereto as tools and operation processing endpoints"
+            }
         }
     },
     "additional_info": {
@@ -42,8 +42,8 @@
     "repository": {},
     "name": "Opereto Worker Libs",
     "summary": "This package adds and removes opereto official python virtualenv worker and performs basic operations related to it",
-    "description": "This is Opereto official python worker. It is a python virtualenv based allowing isolation of the worker libs and dependencies from other python packages that may be installed on the worker host. Opereto provides a set of out-of-the-box services (in other packages) depending on this worker (e.g. generic test tools wrappers, container tools, cloud provisioning tool wrappers Etc). Opereto developers may easily extend this worker functionality adding more services running on it or they can build their own custom workers executing custom services.",
-    "version": "1.0.18",
+    "description": "This is Opereto official python worker. It is a python virtualenv based allowing isolation of the worker libs and dependencies from other python packages that may be installed on the worker host or container. Opereto provides a set of out-of-the-box services depending on this worker library. Worker libs can be installed on standard host OS and on custom tool containers. Opereto standard worker stateful set is based on opereto/worker standard container (see the Dockerfile included in this package to learn more).",
+    "version": "1.0.25",
     "provider": "Opereto LTD",
     "category": "Opereto Core Services",
     "provider_url": "http://www.opereto.com",
