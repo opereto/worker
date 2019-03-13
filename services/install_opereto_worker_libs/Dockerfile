@@ -1,13 +1,11 @@
 FROM ubuntu:16.04
 
-RUN apt-get -yy update && apt-get -yy upgrade && apt-get install -yy sudo && apt-get install -yy unzip \
+RUN apt-get -yy update && apt-get -yy upgrade && apt-get install -yy sudo && apt-get install -yy unzip && apt-get install -y git \
 && apt-get install -y build-essential curl && apt-get install -yy python2.7 && apt-get install -yy lsb-release \
 && apt-get install -yy software-properties-common
 
 ENV HOME /root
 WORKDIR /root
-
-RUN apt-get -yy update && apt-get install -y git
 
 ENV opereto_workspace "/tmp"
 ENV opereto_home "/root/.opereto"
