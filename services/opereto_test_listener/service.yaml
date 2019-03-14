@@ -12,6 +12,13 @@ item_properties:
   mandatory: true
   direction: input
   help: The path to test results directory
+- key: listener_frequency
+  type: integer
+  value: 10
+  editor: number
+  mandatory: true
+  direction: input
+  help: The listener frequency tracking the test results directory for changes
 - key: parent_pid
   type: text
   value:

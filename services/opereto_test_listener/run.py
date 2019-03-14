@@ -14,6 +14,7 @@ class ServiceRunner(ServiceTemplate):
         self.client = OperetoClient()
         ServiceTemplate.__init__(self, **kwargs)
         self._print_step_title('Start opereto test listener..')
+        self.sflow_id = self.input['opereto_source_flow_id']
 
     def validate_input(self):
 
@@ -26,9 +27,13 @@ class ServiceRunner(ServiceTemplate):
                 },
                 "parent_pid": {
                     "type": "string"
+                },
+                "listener_frequency": {
+                    "type": "integer",
+                    "minValue": 1
                 }
             },
-            "required": ['test_results_path'],
+            "required": ['listener_frequency', 'test_results_path'],
             "additionalProperties": True
         }
 
@@ -105,10 +110,10 @@ class ServiceRunner(ServiceTemplate):
         print('[OPERETO_HTML]<br><a href="{}"><font style="color: #222; font-weight: 600; font-size: 13px;">{}</font></a>'.format(link['url'], link['name']))
 
 
-    def _append_to_process_log(self, pid, loglines, log_level='info'):
+    def _append_to_process_log(self, pid, ppid, loglines, log_level='info'):
         log_request_data = {
-            'sflow_id': self.input['opereto_source_flow_id'],
-            'pflow_id': self.input['opereto_parent_flow_id'],
+            'sflow_id': self.sflow_id,
+            'pflow_id': ppid,
             'agent_id': self.input['opereto_agent'],
             'product_id': self.input['opereto_product_id'],
             'data': []
@@ -137,11 +142,14 @@ class ServiceRunner(ServiceTemplate):
         title = test_record.get('title') or testname
         status = test_record['status']
         test_links = test_record.get('links') or []
-
+        test_ppid = test_record.get('ppid') or self.parent_pid
+        test_pid = test_record.get('pid')
         if testname not in self._state:
-            pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=self.parent_pid)
+            if not test_pid:
+                test_pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=test_ppid)
             self._state[testname] = {
-                'pid': pid,
+                'ppid': test_ppid,
+                'pid': test_pid,
                 'status': 'in_process',
                 'title': title,
                 'test_output_md5': '',
@@ -150,7 +158,7 @@ class ServiceRunner(ServiceTemplate):
             }
             time.sleep(2)
         else:
-            pid = self._state[testname]['pid']
+            test_pid = self._state[testname]['pid']
 
         if self._state[testname]['status'] not in self.result_keys:
 
@@ -161,8 +169,7 @@ class ServiceRunner(ServiceTemplate):
             results_dir = os.path.join(self.test_results_dir, testname)
             if os.path.exists(results_dir):
                 output_json_file = os.path.join(results_dir, 'output.json')
-                stdout_log_file = os.path.join(results_dir, 'stdout.log')
-                stderr_log_file = os.path.join(results_dir, 'stderr.log')
+                log_file = os.path.join(results_dir, 'stdout.log')
                 summary_file = os.path.join(results_dir, 'summary.txt')
 
                 if os.path.exists(output_json_file):
@@ -170,7 +177,7 @@ class ServiceRunner(ServiceTemplate):
                     with open(output_json_file, 'r') as of:
                         output_json = json.load(of)
                         if output_json_md5!=self._state[testname]['test_output_md5']:
-                            self.client.modify_process_property('test_output', output_json, pid=pid)
+                            self.client.modify_process_property('test_output', output_json, pid=test_pid)
                             self._state[testname]['test_output_md5'] = output_json_md5
 
                 if os.path.exists(summary_file):
@@ -178,28 +185,24 @@ class ServiceRunner(ServiceTemplate):
                     with open(summary_file, 'r') as sf:
                         summary = sf.read()
                         if summary_md5!=self._state[testname]['summary_md5']:
-                            self.client.modify_process_summary(pid, summary)
+                            self.client.modify_process_summary(test_pid, summary)
                             self._state[testname]['summary_md5'] = summary_md5
 
 
-                for log_file in [stdout_log_file, stderr_log_file]:
-                    log_level = 'info'
-                    if log_file==stderr_log_file:
-                        log_level='error'
-                    if os.path.exists(log_file):
-                        with open(log_file, 'r') as lf:
-                            count=1
-                            loglines=[]
-                            for line in lf.readlines():
-                                if count>=self._state[testname]['last_log_line']:
-                                    if count>MAX_LOG_LINES_PER_PROCESS:
-                                        message = 'Test log is too long. Please save test log in remote storage and add a link to it in Opereto log. See service info to learn how to add links to your tests.json file.'
-                                        loglines.append('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(message))
-                                        break
-                                    loglines.append(line.strip())
-                                count+=1
-                            self._append_to_process_log(pid, loglines, log_level)
-                            self._state[testname]['last_log_line']=count
+                if os.path.exists(log_file):
+                    with open(log_file, 'r') as lf:
+                        count=1
+                        loglines=[]
+                        for line in lf.readlines():
+                            if count>=self._state[testname]['last_log_line']:
+                                if count>MAX_LOG_LINES_PER_PROCESS:
+                                    message = 'Test log is too long. Please save test log in remote storage and add a link to it in Opereto log. See service info to learn how to add links to your tests.json file.'
+                                    loglines.append('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(message))
+                                    break
+                                loglines.append(line.strip())
+                            count+=1
+                        self._append_to_process_log(test_pid, test_ppid, loglines)
+                        self._state[testname]['last_log_line']=count
 
             if status in self.result_keys:
                 links=[]
@@ -207,8 +210,8 @@ class ServiceRunner(ServiceTemplate):
                     html_link = '[OPERETO_HTML]<br><a href="{}"><font style="color: #222; font-weight: 600; font-size: 13px;">{}</font></a>'.format(
                         link['url'], link['name'])
                     links.append(html_link)
-                    self._append_to_process_log(pid, links)
-                self.client.stop_process(pid, status=status)
+                    self._append_to_process_log(test_pid, test_ppid, links)
+                self.client.stop_process(test_pid, status=status)
                 self._state[testname]['status']=status
 
 
@@ -244,7 +247,7 @@ class ServiceRunner(ServiceTemplate):
 
         while(True):
             process_results()
-            time.sleep(20)
+            time.sleep(self.client.input['listener_frequency'])
             if self.end_of_test_suite:
                 break
 
