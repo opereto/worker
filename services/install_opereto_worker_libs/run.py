@@ -6,7 +6,6 @@ FAILURE=False
 
 def install_opereto_lib():
 
-
     LIB_DIR = os.path.join(os.environ['opereto_workspace'], 'opereto')
     VIRT_ENV_DIR = os.path.join(os.environ['opereto_home'], 'operetovenv')
 
@@ -126,7 +125,6 @@ def install_opereto_lib():
     try:
         release=os.environ.get('opereto_service_version')
 
-
         ## check prerequisites
         if sys.version_info<(2,7):
             print >> sys.stderr,'Opereto microservices lib requires python 2.7 or higher.'
@@ -158,7 +156,8 @@ def install_opereto_lib():
             if os.environ.get('opereto_agent'):
                 from pyopereto.client import OperetoClient
                 c = OperetoClient()
-                c.modify_agent_property(c.input['opereto_agent'], 'opereto.worker', True)
+                if c.input['standard_opereto_worker']:
+                    c.modify_agent_property(c.input['opereto_agent'], 'opereto.worker', True)
             return 0
 
     except Exception, e:

@@ -26,7 +26,12 @@ item_properties:
   mandatory: false
   direction: input
   help: Opereto process parent id for test records. If specified, the listener creates new record as direct child processes of that parent process. Otherwise, the listener is the parent process.
-
+- key: debug_mode
+  value: false
+  type: boolean
+  direction: input
+  mandatory: true
+  help: If checked, the listener prints additional debug info
 
 timeout: 10000000
 type: action

@@ -4,5 +4,13 @@ cmd:
     default: bash run.sh
     windows: cmd /c run.bat
     linux: bash run.sh
+item_properties:
+- key: standard_opereto_worker
+  type: boolean
+  value: false
+  editor: checkbox
+  mandatory: true
+  direction: input
+  help: Specify if this host is a standard opereto worker (e.g. adding opereto.worker label to the agent properties)
 timeout: 600
 type: action

@@ -1,0 +1,1 @@
+A simple parent process used by the local command of Opereto CLI to correlate local dev processes with Opereto.

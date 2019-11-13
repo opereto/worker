@@ -1,10 +1,9 @@
 from opereto.helpers.services import ServiceTemplate
-from opereto.utils.validations import JsonSchemeValidator, default_variable_name_scheme, default_entity_name_scheme, process_result_keys, process_status_keys
+from opereto.utils.validations import JsonSchemeValidator, default_entity_name_scheme, process_result_keys, process_status_keys
 from opereto.utils.osutil import get_file_md5sum, remove_directory_if_exists, make_directory
 from opereto.exceptions import raise_runtime_error
 from opereto.settings import MAX_LOG_LINES_PER_PROCESS
 from pyopereto.client import OperetoClient
-from opereto.exceptions import *
 import os, time, json
 
 
@@ -31,6 +30,9 @@ class ServiceRunner(ServiceTemplate):
                 "listener_frequency": {
                     "type": "integer",
                     "minValue": 1
+                },
+                "debug_mode": {
+                    "type": "boolean"
                 }
             },
             "required": ['listener_frequency', 'test_results_path'],
@@ -42,6 +44,8 @@ class ServiceRunner(ServiceTemplate):
 
         self.parent_pid = self.input['parent_pid'] or self.input['pid']
         self.test_results_dir = self.input['test_results_path']
+        self.debug_mode = self.input['debug_mode']
+        self.next_check_source_alive=0
 
         if not os.path.exists(self.test_results_dir):
             raise_runtime_error('Test results directory {} does not exist.'.format(self.test_results_dir))
@@ -69,7 +73,7 @@ class ServiceRunner(ServiceTemplate):
                         {
                             "type": "object",
                             "properties": {
-                                "testname": default_variable_name_scheme,
+                                "testname": default_entity_name_scheme,
                                 "status": {
                                     "enum": self.status_keys
                                 },
@@ -134,8 +138,18 @@ class ServiceRunner(ServiceTemplate):
         self.client._call_rest_api('post', '/processes/{}/log'.format(pid), data=log_request_data,
                                        error='Failed to update test log (test pid = {})'.format(pid))
 
+    def _check_source_alive(self):
+        if self.next_check_source_alive>self.input['listener_frequency']*10:
+            self.next_check_source_alive=0
+            source_status = self.client.get_process_status(self.sflow_id)
+            if source_status!='in_process':
+                self.client.stop_process(pids=str(self.client.input['pid']), status='success')
+
+        self.next_check_source_alive+=1
 
     def _modify_record(self, test_record):
+
+        self._check_source_alive()
 
         testname = test_record['testname']
         test_input = test_record.get('test_input') or {}
@@ -147,6 +161,7 @@ class ServiceRunner(ServiceTemplate):
         if testname not in self._state:
             if not test_pid:
                 test_pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=test_ppid)
+                self.client.wait_to_start(test_pid)
             self._state[testname] = {
                 'ppid': test_ppid,
                 'pid': test_pid,
@@ -156,11 +171,13 @@ class ServiceRunner(ServiceTemplate):
                 'summary_md5': '',
                 'last_log_line': 1
             }
-            time.sleep(2)
         else:
             test_pid = self._state[testname]['pid']
 
         if self._state[testname]['status'] not in self.result_keys:
+
+            if status in self.result_keys:
+                time.sleep(self.client.input['listener_frequency'])
 
             if title!=self._state[testname]['title']:
                 ### TBD: add title change API call
@@ -243,6 +260,9 @@ class ServiceRunner(ServiceTemplate):
                                 self.test_suite_final_status=self.test_data['test_suite']['status']
                         if 'links' in self.test_data['test_suite']:
                             self.suite_links = self.test_data['test_suite']['links']
+            if self.debug_mode:
+                print 'Content of tests_json:'
+                print json.dumps(self.test_data, indent=4)
 
 
         while(True):
@@ -250,6 +270,9 @@ class ServiceRunner(ServiceTemplate):
             time.sleep(self.client.input['listener_frequency'])
             if self.end_of_test_suite:
                 break
+
+        print 'Content of tests_json:'
+        print json.dumps(self.test_data, indent=4)
 
         for link in self.suite_links:
             self._print_test_link(link)

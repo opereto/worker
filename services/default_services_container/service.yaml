@@ -1,0 +1,12 @@
+type: container
+item_properties:
+- editor: json
+  direction: input
+  type: json
+  key: container_specification
+  mandatory: true
+  value: {}
+- direction: output
+  type: json
+  key: processes
+  value: []
