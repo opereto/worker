@@ -28,7 +28,7 @@ default_entity_description_scheme = {
 
 
 services_block_scheme = {
-    "type":"object",
+    "type":['object', 'null'],
     "properties" : {
         "input": {
             "type" : ["object", "null"]

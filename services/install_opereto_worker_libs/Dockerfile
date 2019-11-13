@@ -17,7 +17,7 @@ RUN cd $opereto_workspace && python2.7 -u run.py
 
 
 RUN cd /opt && \
-    curl -O https://s3.amazonaws.com/opereto-agent/opereto-agent-latest.jar && \
+    curl -O https://s3.amazonaws.com/opereto_downloads/opereto-agent-latest.jar && \
     chmod 777 -R *
 
 WORKDIR /opt/opereto-agent-latest
@@ -31,4 +31,4 @@ ENV opereto_user ""
 ENV opereto_password ""
 ENV log_level="info"
 
-CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -u $opereto_user -p $opereto_password -loglevel $log_level
+CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -u $opereto_user -p $opereto_password -loglevel $log_level -log console

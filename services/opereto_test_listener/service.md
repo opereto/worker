@@ -1,5 +1,5 @@
 #### Documentation
-https://docs.opereto.com/developing-with-opereto/test-tools/test-listener/
+https://docs.opereto.com
 
 #### Dependencies
-* Opereto worker virtual environment
+* Requires PyOperato
