@@ -288,10 +288,9 @@ class ServiceRunner(ServiceTemplate):
 
 
     def setup(self):
-        make_directory(self.input['test_results_path'])
+        pass
 
     def teardown(self):
-        remove_directory_if_exists(self.input['test_results_path'])
         self._print_step_title('Opereto test listener stopped.')
 
 
