@@ -14,6 +14,7 @@ class ServiceRunner(ServiceTemplate):
         ServiceTemplate.__init__(self, **kwargs)
         self._print_step_title('Start opereto test listener..')
         self.sflow_id = self.input['opereto_source_flow_id']
+        self.remove_test_results_dir=False
 
     def validate_input(self):
 
@@ -288,9 +289,13 @@ class ServiceRunner(ServiceTemplate):
 
 
     def setup(self):
-        pass
+        if not os.path.exists(self.input['test_results_path']):
+            make_directory(self.input['test_results_path'])
+            self.remove_test_results_dir = True
 
     def teardown(self):
+        if self.remove_test_results_dir:
+            remove_directory_if_exists(self.input['test_results_path'])
         self._print_step_title('Opereto test listener stopped.')
 
 
