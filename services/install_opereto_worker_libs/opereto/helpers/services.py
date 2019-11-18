@@ -105,6 +105,7 @@ class TaskRunner(ServiceTemplate):
         validator = JsonSchemeValidator(self.input, input_scheme)
         validator.validate()
 
+
     def _unimplemented_method(self):
         raise Exception, 'Unimplemented method'
 
