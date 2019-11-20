@@ -40,6 +40,12 @@
             "info": {
                 "summary": "A simple parent process used by the local command of Opereto CLI to correlate local dev processes with Opereto"
             }
+        },
+        "worker_task_runner": {
+            "source_dir": "worker_task_runner",
+            "info": {
+                "summary": "A generic task runner allowing to create and teardown a remote agent worker and run one or more services on it"
+            }
         }
     },
     "additional_info": {
@@ -49,7 +55,7 @@
     "name": "Opereto Worker Libs",
     "summary": "This package adds and removes opereto official python virtualenv worker and performs basic operations related to it",
     "description": "This is Opereto official python worker. It is a python virtualenv based allowing isolation of the worker libs and dependencies from other python packages that may be installed on the worker host or container. Opereto provides a set of out-of-the-box services depending on this worker library. Worker libs can be installed on standard host OS and on custom tool containers. Opereto standard worker stateful set is based on opereto/worker standard container (see the Dockerfile included in this package to learn more).",
-    "version": "1.0.43",
+    "version": "1.0.44",
     "provider": "Opereto LTD",
     "category": "Opereto Core Services",
     "provider_url": "http://www.opereto.com",

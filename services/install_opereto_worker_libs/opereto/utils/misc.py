@@ -31,3 +31,13 @@ def retry(tries, delay=3, backoff=2):
 
 
 
+def status_to_exitcode(status):
+    map = {
+        'success': 0,
+        'error': 1,
+        'failure': 2,
+        'warning': 3,
+        'terminated': 1,
+        'timeout': 1
+    }
+    return map.get(status)

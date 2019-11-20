@@ -48,9 +48,6 @@ class ServiceRunner(ServiceTemplate):
         self.debug_mode = self.input['debug_mode']
         self.next_check_source_alive=0
 
-        if not os.path.exists(self.test_results_dir):
-            raise_runtime_error('Test results directory {} does not exist.'.format(self.test_results_dir))
-
         self.result_keys = process_result_keys
         self.status_keys = process_status_keys
 
