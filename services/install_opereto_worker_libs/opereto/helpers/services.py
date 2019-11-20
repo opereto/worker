@@ -1,7 +1,13 @@
-from pyopereto.client import OperetoClient, OperetoClientError
-from opereto.exceptions import OperetoRuntimeError
+import sys
+import os
+import re
+import time
+import abc
 import traceback
-import abc, sys
+from pyopereto.client import OperetoClient, OperetoClientError
+from opereto.utils.validations import included_services_scheme, services_block_scheme, JsonSchemeValidator, validate_dict, default_variable_pattern
+from opereto.utils.osutil import make_directory
+from opereto.exceptions import *
 
 
 class ServiceTemplate(object):
@@ -11,6 +17,8 @@ class ServiceTemplate(object):
     def __init__(self, **kwargs):
         self.client = OperetoClient()
         self.input = self.client.input
+        self.exitcode = 0
+
         if kwargs:
             self.input.update(kwargs)
 
@@ -33,6 +41,14 @@ class ServiceTemplate(object):
     def validate_input(self):
         pass
 
+
+    ## temp, due to bug in agent
+    def _replace_empty_dict_with_none(self, properties=[]):
+        for property in properties:
+            if not self.input.get(property):
+                self.input[property]=None
+
+
     def _print_error(self, text):
         print >> sys.stderr, text
 
@@ -43,24 +59,26 @@ class ServiceTemplate(object):
         print('[OPERETO_HTML]<br><br><font style="width: 800px; padding: 15px; color: #222; font-weight: 400; border:2px solid red; background-color: #f8f8f8;">{}</font><br><br>'.format(text))
 
     def run(self):
+        exitcode = 0
         try:
-            self.setup()
             self.validate_input()
-            return self.process()
+            self.setup()
+            exitcode = self.process()
         except OperetoClientError, e:
             print >> sys.stderr, e.message
             print >> sys.stderr, 'Service execution failed.'
-            return 1
+            exitcode = 2
         except OperetoRuntimeError, e:
             print >> sys.stderr, e.error
             print >> sys.stderr, 'Service execution failed.'
-            return 1
+            exitcode = 2
         except Exception,e:
             print >> sys.stderr, traceback.format_exc()
-            print >> sys.stderr, 'Service execution failed.'
-            return 1
+            print >> sys.stderr, 'Service execution failed : {}'.format(str(e))
+            exitcode = 1
         finally:
             self.teardown()
+            return exitcode
 
 
 
@@ -68,82 +86,97 @@ class TaskRunner(ServiceTemplate):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, input_scheme={}, **kwargs):
-        self.client = OperetoClient()
-        self.input_scheme = input_scheme
+    def __init__(self, **kwargs):
         ServiceTemplate.__init__(self, **kwargs)
+
+
+    @abc.abstractmethod
+    def _setup(self):
+        self._unimplemented_method()
+
+    @abc.abstractmethod
+    def _teardown(self):
+        self._unimplemented_method()
+
+    @abc.abstractmethod
+    def _validate_input(self):
+        self._unimplemented_method()
+
+    @abc.abstractmethod
+    def _run_task(self):
+        self._unimplemented_method()
 
 
     def validate_input(self):
 
-        default_input_scheme = {
+        self._replace_empty_dict_with_none(['task_service','test_parser_config'])
+
+        input_scheme = {
             "type": "object",
             "properties": {
                 "debug_mode": {
                     "type": "boolean"
                 },
                 "pre_task_services": included_services_scheme,
-
                 "valid_exit_codes": {
                     "type": "string"
                 },
-
                 "test_parser_config": services_block_scheme,
                 "test_results_directory": {
                     "type": ["string", "null"]
                 },
                 "keep_parser_running": {
                     "type": "integer",
-                    "minimum": 5,
+                    "minimum": 5
                 },
-                "post_task_services": included_services_scheme,
-                "additionalProperties": True
-            }
+                "post_task_services": included_services_scheme
+            },
+            "required": [],
+            "additionalProperties": True
         }
 
-        input_scheme = default_input_scheme.update(self.input_scheme)
+
         validator = JsonSchemeValidator(self.input, input_scheme)
         validator.validate()
 
+        self._validate_input()
 
-    def _unimplemented_method(self):
-        raise Exception, 'Unimplemented method'
-
-
-    @abc.abstractmethod
-    def _running_task(self):
-        self._unimplemented_method()
 
     def process(self):
+        self._run_parser()
+        self._run_task()
+        self._run_listener()
+        return self.exitcode
 
+
+    def _run_service_set(self, service_list):
+        for service in service_list:
+            input = service.get('input') or {}
+            agent = service.get('agents') or self.input['opereto_agent']
+            pid = self.client.create_process(service=service['service'], agent=agent, title=service.get('title'),**input)
+            if not self.client.is_success(pid):
+                raise OperetoRuntimeError(error='Run services set failed')
+
+
+    def _run_parser(self):
         if self.input['test_parser_config']:
-
             if not self.input['test_results_directory']:
                 raise Exception('The property value of test_results_directory is missing. ')
 
             ## run listener
             self._print_step_title('Running test listener..')
-            self.listener_pid = self.client.create_process('opereto_test_listener',
-                                                           test_results_path=self.listener_results_dir,
-                                                           parent_pid=self.parent_pid, debug_mode=self.debug_mode)
+            self.listener_pid = self.client.create_process('opereto_test_listener', test_results_path=self.listener_results_dir, parent_pid=self.parent_pid, debug_mode=self.debug_mode)
 
             ## run parser
             self._print_step_title('Running test parser: {}..'.format(self.input['test_parser_config']['service']))
             parser_input = self.input['test_parser_config'].get('input') or {}
-            parser_input.update({'parser_directory_path': self.host_test_result_directory,
-                                 'listener_directory_path': self.listener_results_dir, 'debug_mode': self.debug_mode})
+            parser_input.update({'parser_directory_path':self.host_test_result_directory, 'listener_directory_path': self.listener_results_dir, 'debug_mode': self.debug_mode})
             self.parser_pid = self.client.create_process(self.input['test_parser_config']['service'], **parser_input)
 
             time.sleep(5)
 
 
-        ## run tool
-        (exc, out, error) = self._running_task()
-
-        if exc not in self.valid_exit_codes:
-            print >> sys.stderr, 'Execution failed.'
-            self.ok = False
-
+    def _run_listener(self):
         if self.listener_pid:
             listener_frequency = self.client.get_process_properties(self.listener_pid, 'listener_frequency')
             wait_for_listener = int(listener_frequency)*3
@@ -159,15 +192,11 @@ class TaskRunner(ServiceTemplate):
                 print 'Listener still running. Ignoring listener result.'
             if status in ['error', 'failure']:
                 print >> sys.stderr, 'Listener indicates on a failure of the test suite..'
-                self.ok = False
-
-        if self.ok:
-            return self.client.SUCCESS
-        return self.client.FAILURE
+                self.exitcode = 2
 
 
     def setup(self):
-        self.ok = True
+
         self.parent_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
         self.debug_mode = self.input['debug_mode']
         self.listener_pid = None
@@ -176,26 +205,20 @@ class TaskRunner(ServiceTemplate):
         self.host_test_result_directory = os.path.join(self.input['opereto_workspace'], 'opereto_parser_results')
         if self.input['test_parser_config']:
             make_directory(self.host_test_result_directory)
-
         self.valid_exit_codes = [0]
         if self.client.input['valid_exit_codes']:
             codes = self.client.input['valid_exit_codes'].split(',')
-            self.valid_exit_codes = []
+            self.valid_exit_codes=[]
             for code in codes:
                 self.valid_exit_codes.append(int(code))
-
-        ## run pre task services
-        for service in self.input['pre_task_services']:
-            input = service.get('input') or {}
-            agent = service.get('agents') or self.agent_id
-            pid = self.client.create_process(service=service['service'], agent=agent, title=service.get('title'),
-                                             **input)
-            if not self.client.is_success(pid):
-                return self.client.FAILURE
+        self._setup()
+        self._run_service_set(self.input['pre_task_services'])
 
 
     def teardown(self):
         try:
+            self._teardown()
+
             if self.input['test_parser_config']:
                 time.sleep(self.input['keep_parser_running'])
 
@@ -206,12 +229,4 @@ class TaskRunner(ServiceTemplate):
 
                 time.sleep(10) ## wait for processes to get terminated
         finally:
-            ## run post task services
-            for service in self.input['post_task_services']:
-                input = service.get('input') or {}
-                agent = service.get('agents') or self.agent_id
-                pid = self.client.create_process(service=service['service'], agent=agent, title=service.get('title'),
-                                                 **input)
-                if not self.client.is_success(pid):
-                    return self.client.FAILURE
-
+            self._run_service_set(self.input['post_task_services'])

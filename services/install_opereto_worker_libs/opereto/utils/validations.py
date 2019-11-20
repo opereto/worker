@@ -96,6 +96,7 @@ class JsonSchemeValidator():
         except Exception,e:
             raise e
 
+
     def validate(self):
         try:
             self.validator.validate(self.document)
@@ -107,7 +108,7 @@ class JsonSchemeValidator():
                 mypath = '->'.join(newpath)
             else:
                 raise Exception(e.message)
-            raise Exception(e.message)
+            raise Exception(self.title + ': ' + mypath + ': ' + e.message)
 
 
 def is_number(s):
