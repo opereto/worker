@@ -1,4 +1,18 @@
 item_properties:
+- key: testname
+  type: text
+  value:
+  mandatory: true
+  direction: input
+  help: A unique test name
+
+- key: test_runner_id
+  type: text
+  value:
+  mandatory: true
+  direction: input
+  help: The test runner pid
+
 - key: test_input
   type: json
   value:
@@ -15,12 +29,5 @@ item_properties:
   direction: output
   help: Test output json
 
-- key: testname
-  type: text
-  value:
-  mandatory: true
-  direction: input
-  help: A unique test name
-
-timeout: 10000000
+timeout: 3600
 type: record

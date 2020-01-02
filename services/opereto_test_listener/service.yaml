@@ -33,5 +33,5 @@ item_properties:
   mandatory: true
   help: If checked, the listener prints additional debug info
 
-timeout: 10000000
+timeout: 7200
 type: action

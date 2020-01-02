@@ -76,8 +76,8 @@ class ServiceRunner(TaskRunner):
             task_service_input = task_service.get('input') or {}
             pid = self.client.create_process(service=task_service['service'], agent=self.worker_agent_id, title=task_service.get('title'), **task_service_input)
             if not self.client.is_success(pid):
-                self.exitcode = self.client.FAILURE
-
+                return self.client.FAILURE
+            return self.client.SUCCESS
 
     def _setup(self):
         if not self.input['worker_config'].get('agent_id'):

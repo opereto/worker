@@ -158,6 +158,9 @@ class ServiceRunner(ServiceTemplate):
         test_pid = test_record.get('pid')
         if testname not in self._state:
             if not test_pid:
+
+                ## add test_runner_id
+
                 test_pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=test_ppid)
                 self.client.wait_to_start(test_pid)
             self._state[testname] = {
