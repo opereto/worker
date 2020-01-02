@@ -131,11 +131,21 @@ item_properties:
 -   direction: output
     editor: hidden
     example: 0
-    key: exitcode
+    key: task_exitcode
     mandatory: true
     store: []
     type: integer
     value: 0
+
+-   direction: output
+    editor: hidden
+    example: 0
+    key: task_output
+    mandatory: true
+    store: []
+    type: integer
+    value: 0
+
 
 timeout: 3600
 type: action

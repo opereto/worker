@@ -4,6 +4,8 @@ RUN apt-get -yy update && apt-get -yy upgrade && apt-get install -yy sudo && apt
 && apt-get install -y build-essential curl && apt-get install -yy python2.7 && apt-get install -yy lsb-release \
 && apt-get install -yy software-properties-common
 
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl && chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
+
 ENV HOME /root
 WORKDIR /root
 

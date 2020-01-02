@@ -17,8 +17,8 @@ class ServiceTemplate(object):
     def __init__(self, **kwargs):
         self.client = OperetoClient()
         self.input = self.client.input
+        self.state_file = '_opereto_service_state.json'
         self.exitcode = 0
-
         if kwargs:
             self.input.update(kwargs)
 
@@ -40,6 +40,15 @@ class ServiceTemplate(object):
     @abc.abstractmethod
     def validate_input(self):
         pass
+
+
+    def _save_state(self, state):
+        with open(self.state_file, 'w') as _state_file:
+            _state_file.write(json.dumps(state, indent=4))
+
+    def _get_state(self):
+        with open(self.state_file, 'r') as _state_file:
+            return json.loads(_state_file.read())
 
 
     ## temp, due to bug in agent
@@ -141,12 +150,16 @@ class TaskRunner(ServiceTemplate):
 
         self._validate_input()
 
+        if self.input['test_parser_config']:
+            if not self.input['test_results_directory']:
+                raise Exception('Test parser config is provided but the property value of test_results_directory is missing. ')
+
 
     def process(self):
         self._run_parser()
-        self._run_task()
-        self._run_listener()
-        return self.exitcode
+        self.task_exitcode = self._run_task()
+        self._wait_listener()
+        return self.task_exitcode
 
 
     def _run_service_set(self, service_list):
@@ -157,54 +170,46 @@ class TaskRunner(ServiceTemplate):
             if not self.client.is_success(pid):
                 raise OperetoRuntimeError(error='Run services set failed')
 
-
-    def _run_parser(self):
+    def _run_parser(self, agent=None, listener_results_directory=None):
         if self.input['test_parser_config']:
-            if not self.input['test_results_directory']:
-                raise Exception('The property value of test_results_directory is missing. ')
 
+            agent = agent or self.input['opereto_agent']
+            listener_results_directory = listener_results_directory or self.listener_results_dir
             ## run listener
             self._print_step_title('Running test listener..')
-            self.listener_pid = self.client.create_process('opereto_test_listener', test_results_path=self.listener_results_dir, parent_pid=self.parent_pid, debug_mode=self.debug_mode)
+            self.listener_pid = self.client.create_process('opereto_test_listener', test_results_path=listener_results_directory, parent_pid=self.parent_pid, debug_mode=self.debug_mode, timeout=self.input['opereto_timeout'], agent=agent)
 
             ## run parser
             self._print_step_title('Running test parser: {}..'.format(self.input['test_parser_config']['service']))
             parser_input = self.input['test_parser_config'].get('input') or {}
-            parser_input.update({'parser_directory_path':self.host_test_result_directory, 'listener_directory_path': self.listener_results_dir, 'debug_mode': self.debug_mode})
-            self.parser_pid = self.client.create_process(self.input['test_parser_config']['service'], **parser_input)
-
+            parser_input.update({'parser_directory_path':self.test_results_directory, 'listener_directory_path': listener_results_directory, 'debug_mode': self.debug_mode})
+            self.parser_pid = self.client.create_process(self.input['test_parser_config']['service'], timeout=self.input['opereto_timeout'], agent=agent, **parser_input)
             time.sleep(5)
 
-
-    def _run_listener(self):
+    def _wait_listener(self):
         if self.listener_pid:
             listener_frequency = self.client.get_process_properties(self.listener_pid, 'listener_frequency')
-            wait_for_listener = int(listener_frequency)*3
-            print 'Waiting for listener to end.. ({} seconds)'.format(wait_for_listener)
-            time.sleep(wait_for_listener)  ## wait for listener to stop
+            wait_for_listener = int(listener_frequency)
+            print 'Waiting for listener process to collect final results.. ({} seconds)'.format(wait_for_listener)
             status = self.client.get_process_status(self.listener_pid)
-            print 'Listener status is {}'.format(status)
-            if status=='in_process':
-                print 'Still waiting for listener to end.. ({} seconds)'.format(wait_for_listener)
-                time.sleep(wait_for_listener)  ## wait for listener to stop
-                status = self.client.get_process_status(self.listener_pid)
             if status == 'in_process':
-                print 'Listener still running. Ignoring listener result.'
-            if status in ['error', 'failure']:
-                print >> sys.stderr, 'Listener indicates on a failure of the test suite..'
-                self.exitcode = 2
-
+                print 'Listener did not get any indication about test suite final status..'
+            elif status in ['error', 'failure']:
+                print >> sys.stderr, 'Listener indicates on a failure of the test suite.'
+                self.task_exitcode = 2
 
     def setup(self):
+        self.task_exitcode = 0
+        self.task_output = {}
 
         self.parent_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
         self.debug_mode = self.input['debug_mode']
         self.listener_pid = None
         self.parser_pid = None
         self.listener_results_dir = os.path.join(self.input['opereto_workspace'], 'opereto_listener_results')
-        self.host_test_result_directory = os.path.join(self.input['opereto_workspace'], 'opereto_parser_results')
-        if self.input['test_parser_config']:
-            make_directory(self.host_test_result_directory)
+        self.test_results_directory = self.input['test_results_directory']
+        self.task_output_json = os.path.join(self.input['opereto_workspace'], 'opereto_task_output.json')
+        make_directory(self.listener_results_dir)
         self.valid_exit_codes = [0]
         if self.client.input['valid_exit_codes']:
             codes = self.client.input['valid_exit_codes'].split(',')
@@ -217,16 +222,20 @@ class TaskRunner(ServiceTemplate):
 
     def teardown(self):
         try:
-            self._teardown()
-
             if self.input['test_parser_config']:
                 time.sleep(self.input['keep_parser_running'])
-
                 if self.parser_pid:
                     self.client.stop_process(self.parser_pid)
+                    self.client.wait_to_end([self.parser_pid])
                 if self.listener_pid:
                     self.client.stop_process(self.listener_pid)
+                    self.client.wait_to_end([self.listener_pid])
 
-                time.sleep(10) ## wait for processes to get terminated
+            self._teardown()
+            self.client.modify_process_property('task_exitcode', self.task_exitcode)
+            if os.path.exists(self.task_output_json):
+                with open(self.task_output_json, 'r') as out_file:
+                    output_data = json.loads(out_file.read())
+                    self.client.modify_process_property('task_output', output_data)
         finally:
             self._run_service_set(self.input['post_task_services'])
