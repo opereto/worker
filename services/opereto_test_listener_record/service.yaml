@@ -9,7 +9,7 @@ item_properties:
 - key: test_runner_id
   type: text
   value:
-  mandatory: true
+  mandatory: false
   direction: input
   help: The test runner pid
 
