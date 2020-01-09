@@ -4,6 +4,12 @@ cmd:
     default: python -u run.py
   path:
     default: ~/.opereto/operetovenv
+termination_cmd:
+  type: python-venv
+  command:
+    default: python -u kill.py
+  path:
+    default: ~/.opereto/operetovenv
 item_properties:
 - key: test_results_path
   type: text
@@ -14,7 +20,7 @@ item_properties:
   help: The path to test results directory
 - key: listener_frequency
   type: integer
-  value: 10
+  value: 5
   editor: number
   mandatory: true
   direction: input

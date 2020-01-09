@@ -31,8 +31,7 @@ class JunitToOperetoResults(object):
                         status = 'success'
                     elif result._tag in ['failure', 'error']:
                         status = result._tag
-                        summary = result.message
-
+                        summary = '<b>{}</b><BR>{}'.format(result.message,result._elem.text)
                     if status:
                         testname = case.name
                         testcase_dict={
@@ -57,20 +56,20 @@ class JunitToOperetoResults(object):
                             if summary:
                                 summary_file = os.path.join(self.dest_path,testname, 'summary.txt')
                                 _modify_output_file(summary_file,summary)
+                            log_data=''
                             if stdout:
+                                log_data+='STDOUT:<BR>{}<BR>'.format(stdout)
+                            if stderr:
+                                log_data += 'STDERR:<BR>{}<BR>'.format(stderr)
+                            if log_data:
                                 stdout_file = os.path.join(self.dest_path,testname, 'stdout.log')
                                 _modify_output_file(stdout_file, stdout)
-                            if stderr:
-                                stderr_file = os.path.join(self.dest_path,testname, 'stderr.log')
-                                _modify_output_file(stderr_file, stderr)
 
 
             xml = JUnitXml.fromfile(self.source_path)
             if isinstance(xml, TestSuite):
-                print 'xunit contains one test suite..'
                 parser_suite(xml)
             else:
-                print 'xunit contains several test suites..'
                 for suite in xml:
                     parser_suite(suite)
 
@@ -78,12 +77,8 @@ class JunitToOperetoResults(object):
                 tests_json_file = os.path.join(self.dest_path, 'tests.json')
                 self.tests['test_suite'] = {'status': self.suite_status}
                 with open(tests_json_file, 'w') as tf:
-                    tf.write(json.dumps(self.tests))
+                    tf.write(json.dumps(self.tests, indent=4))
 
         except Exception, e:
             raise OperetoRuntimeError(error='Failed to parse junit results: {}'.format(str(e)))
-
-
-
-
 
