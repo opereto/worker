@@ -17,7 +17,7 @@ class ServiceTemplate(object):
     def __init__(self, **kwargs):
         self.client = OperetoClient()
         self.input = self.client.input
-        self.state_file = '_opereto_service_state.json'
+        self.state_file = os.path.join(self.input['opereto_workspace'], '_opereto_service_state.json')
         self.exitcode = 0
         if kwargs:
             self.input.update(kwargs)
@@ -43,12 +43,14 @@ class ServiceTemplate(object):
 
 
     def _save_state(self, state):
-        with open(self.state_file, 'w') as _state_file:
-            _state_file.write(json.dumps(state, indent=4))
+        if os.path.exists(self.state_file):
+            with open(self.state_file, 'w') as _state_file:
+                _state_file.write(json.dumps(state, indent=4))
 
     def _get_state(self):
-        with open(self.state_file, 'r') as _state_file:
-            return json.loads(_state_file.read())
+        if os.path.exists(self.state_file):
+            with open(self.state_file, 'r') as _state_file:
+                return json.loads(_state_file.read())
 
 
     ## temp, due to bug in agent
@@ -201,7 +203,6 @@ class TaskRunner(ServiceTemplate):
     def setup(self):
         self.task_exitcode = 0
         self.task_output = {}
-
         self.parent_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
         self.debug_mode = self.input['debug_mode']
         self.listener_pid = None
@@ -224,12 +225,12 @@ class TaskRunner(ServiceTemplate):
         try:
             if self.input['test_parser_config']:
                 time.sleep(self.input['keep_parser_running'])
-                if self.parser_pid:
-                    self.client.stop_process(self.parser_pid)
-                    self.client.wait_to_end([self.parser_pid])
                 if self.listener_pid:
                     self.client.stop_process(self.listener_pid)
                     self.client.wait_to_end([self.listener_pid])
+                if self.parser_pid:
+                    self.client.stop_process(self.parser_pid)
+                    self.client.wait_to_end([self.parser_pid])
 
             self._teardown()
             self.client.modify_process_property('task_exitcode', self.task_exitcode)

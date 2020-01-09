@@ -15,6 +15,10 @@ class ServiceRunner(ServiceTemplate):
         self._print_step_title('Start opereto test listener..')
         self.sflow_id = self.input['opereto_source_flow_id']
         self.remove_test_results_dir=False
+        self.op_state={}
+        if os.path.exists(self.state_file):
+            self.op_state = self._get_state()
+
 
     def validate_input(self):
 
@@ -103,7 +107,8 @@ class ServiceRunner(ServiceTemplate):
         }
 
         self.end_of_test_suite=False
-        self.test_suite_final_status = 'success'
+        self.op_state['test_suite_final_status'] = 'success'
+        self._save_state(self.op_state)
         self.test_data = {}
         self.suite_links = []
         self._state = {}
@@ -233,6 +238,8 @@ class ServiceRunner(ServiceTemplate):
                 self._state[testname]['status']=status
 
 
+
+
     def process(self):
 
         def process_results():
@@ -240,7 +247,6 @@ class ServiceRunner(ServiceTemplate):
             if os.path.exists(tests_json):
                 with open(tests_json, 'r') as tf:
                     self.test_data = json.load(tf)
-                    all_tests_completed=True
                     try:
                         validator = JsonSchemeValidator(self.test_data, self.tests_json_scheme)
                         validator.validate()
@@ -251,52 +257,49 @@ class ServiceRunner(ServiceTemplate):
                     if 'test_records' in self.test_data:
                         for test_record in self.test_data['test_records']:
                             self._modify_record(test_record)
-                            if test_record['status'] not in self.result_keys:
-                                all_tests_completed=False
 
-                    if 'test_suite' in self.test_data and all_tests_completed:
+                    if 'test_suite' in self.test_data:
                         if 'status' in self.test_data['test_suite']:
                             if self.test_data['test_suite']['status'] in self.result_keys:
-                                self.end_of_test_suite=True
-                                self.test_suite_final_status=self.test_data['test_suite']['status']
+                                self.op_state['test_suite_final_status']=self.test_data['test_suite']['status']
+                                self._save_state(self.op_state)
                         if 'links' in self.test_data['test_suite']:
                             self.suite_links = self.test_data['test_suite']['links']
             if self.debug_mode:
-                print 'Content of tests_json:'
-                print json.dumps(self.test_data, indent=4)
-
+                print('[DEBUG] content of tests.json: {}'.format(json.dumps(self.test_data)))
 
         while(True):
             process_results()
             time.sleep(self.client.input['listener_frequency'])
-            if self.end_of_test_suite:
-                break
-
-        print 'Content of tests_json:'
-        print json.dumps(self.test_data, indent=4)
-
-        for link in self.suite_links:
-            self._print_test_link(link)
-
-        if self.test_suite_final_status=='success':
-            return self.client.SUCCESS
-        elif self.test_suite_final_status=='failure':
-            return self.client.FAILURE
-        elif self.test_suite_final_status=='warning':
-            return self.client.WARNING
-        else:
-            return self.client.ERROR
 
 
     def setup(self):
         if not os.path.exists(self.input['test_results_path']):
             make_directory(self.input['test_results_path'])
-            self.remove_test_results_dir = True
+            self.op_state = {'test_results_path': self.input['test_results_path']}
+            self._save_state(self.op_state)
 
     def teardown(self):
-        if self.remove_test_results_dir:
+        if 'test_results_path' in self.op_state:
             remove_directory_if_exists(self.input['test_results_path'])
+            del self.op_state['test_results_path']
+            self._save_state(self.op_state)
         self._print_step_title('Opereto test listener stopped.')
+
+        print 'Final content of tests_json: {}'.format(json.dumps(self.test_data), indent=4)
+
+        for link in self.suite_links:
+            self._print_test_link(link)
+
+        if self.op_state['test_suite_final_status'] == 'success':
+            return self.client.SUCCESS
+        elif self.op_state['test_suite_final_status'] == 'failure':
+            return self.client.FAILURE
+        elif self.op_state['test_suite_final_status'] == 'warning':
+            return self.client.WARNING
+        else:
+            return self.client.ERROR
+
 
 
 if __name__ == "__main__":
