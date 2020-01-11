@@ -91,7 +91,7 @@ class ServiceRunner(TaskRunner):
 
             self.worker_agent_id = self.client.get_process_property(pid, service['agent_id_property'])
             self.remove_worker = True
-
+            self.parser_results_directory = self.test_results_directory
 
 
     def _teardown(self):

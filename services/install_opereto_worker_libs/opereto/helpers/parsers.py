@@ -1,7 +1,9 @@
 from opereto.exceptions import OperetoRuntimeError
 from opereto.utils.osutil import make_directory
 from junitparser import JUnitXml, TestSuite
+import collections
 import json, os
+import re
 
 class JunitToOperetoResults(object):
 
@@ -11,59 +13,128 @@ class JunitToOperetoResults(object):
         self.tests = {
             'test_records': []
         }
-        self.suite_status = 'success'
 
+        make_directory(self.dest_path)
 
-    def parse(self):
+    def _print_testcase(self, text, color):
+        return '[OPERETO_HTML]<font style="color: {}; font-size: 15px; font-weight: 600;">{}</font><br>\n'.format(color, text)
+
+    def parse(self, debug_mode=False):
+        self.tests_data = {}
 
         try:
-
             def parser_suite(suite):
 
-                if int(suite.errors) > 0 or int(suite.failures) > 0:
+                def _modify_output_file(file, data):
+                    with open(file, 'w') as of:
+                        of.write(data)
+
+                test_records = collections.OrderedDict()
+
+                if debug_mode:
+                    props = {
+                        "name": suite.name,
+                        "time": suite.time,
+                        "timestamp": suite.timestamp,
+                        "tests": suite.tests,
+                        "failures": suite.failures,
+                        "errors": suite.errors,
+                        "skipped": suite.skipped
+                    }
+                    print('DEBUG: {}'.format(props))
+
+                if int(suite.tests)>0:
+                    self.suite_status = 'success'
+                if int(suite.failures) > 0:
                     self.suite_status = 'failure'
+                if int(suite.errors) > 0:
+                    self.suite_status = 'error'
+
+                def _escape_name(name):
+                    return re.sub('[^0-9a-z-_]+', '-', name).lower()
 
                 for case in suite:
-                    summary=''
-                    status=None
+                    if case.classname:
+                        testname = _escape_name(case.classname)
+                    else:
+                        testname = _escape_name(case.name)
+
+                    summary = ''
                     result = case.result
-                    if not result:
-                        status = 'success'
-                    elif result._tag in ['failure', 'error']:
+                    status = 'success'
+                    if result:
                         status = result._tag
-                        summary = '<b>{}</b><BR>{}'.format(result.message,result._elem.text)
-                    if status:
-                        testname = case.name
-                        testcase_dict={
+                        if status in ['failure', 'error']:
+                            status = result._tag
+                        else:
+                            status = 'warning'
+
+                        try:
+                            summary = '{}<BR>{}'.format(result.message, result._elem.text)
+                        except:
+                            try:
+                                summary = '{}'.format(result.message)
+                            except:
+                                summary = ''
+
+                    stdout = case.system_out
+                    stderr = case.system_err
+
+                    if testname not in test_records:
+                        test_dict={
                             'testname': testname,
                             'title': testname,
                             'status': status
                         }
-                        stdout = case.system_out
-                        stderr = case.system_err
-                        # classname = case.classname
-                        #duration = case.time
-                        self.tests['test_records'].append(testcase_dict)
+                        test_records[testname] = test_dict
 
-                        def _modify_output_file(file, data):
-                            with open(file, 'w') as of:
-                                of.write(data)
+                    if testname not in self.tests_data:
+                        self.tests_data[testname]=[]
 
-                        ## create directory structure
-                        if summary or stdout or stderr:
-                            make_directory(self.dest_path)
-                            make_directory(os.path.join(self.dest_path,testname))
-                            if summary:
-                                summary_file = os.path.join(self.dest_path,testname, 'summary.txt')
-                                _modify_output_file(summary_file,summary)
-                            log_data=''
-                            if stdout:
-                                log_data+='STDOUT:<BR>{}<BR>'.format(stdout)
-                            if stderr:
-                                log_data += 'STDERR:<BR>{}<BR>'.format(stderr)
-                            if log_data:
-                                stdout_file = os.path.join(self.dest_path,testname, 'stdout.log')
-                                _modify_output_file(stdout_file, stdout)
+                    if summary or stdout or stderr:
+                        make_directory(os.path.join(self.dest_path, testname))
+                    self.tests_data[testname].append({
+                        'name': case.name,
+                        'stdout': stdout,
+                        'stderr': stderr,
+                        'summary': summary,
+                        'duration': str(case.time),
+                        'status': status
+                    })
+
+                self.tests['test_records']=test_records.values()
+
+                for tn, cases in self.tests_data.items():
+                    tn_summary = ''
+                    tn_log_data = ''
+                    for case in cases:
+                        if case['summary']:
+                            tn_summary+='<b>{}</b><BR>{}<BR>'.format(case['name'],case['summary'])
+
+                        if case['stdout'] or case['stderr']:
+                            if case['status'] == 'success':
+                                tn_log_data += self._print_testcase(case['name'], '#0075EA')
+                            elif case['status'] in ['failure', 'error']:
+                                tn_log_data += self._print_testcase(case['name'], '#EF5000')
+                            else:
+                                tn_log_data += self._print_testcase(case['name'], '#333333')
+
+                            if case['stdout']:
+                                tn_log_data += '{}\n'.format(case['stdout'])
+                            if case['stderr']:
+                                tn_log_data += '{}\n'.format(case['stderr'])
+
+                        if case['status']=='failure' and test_records[tn]['status']!='error':
+                            test_records[tn]['status']='failure'
+                        if case['status']=='error':
+                            test_records[tn]['status']='error'
+
+                    if tn_summary:
+                        summary_file = os.path.join(self.dest_path, tn, 'summary.txt')
+                        _modify_output_file(summary_file, tn_summary)
+                    if tn_log_data:
+                        stdout_file = os.path.join(self.dest_path, tn, 'stdout.log')
+                        _modify_output_file(stdout_file, tn_log_data)
 
 
             xml = JUnitXml.fromfile(self.source_path)
