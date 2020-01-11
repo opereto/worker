@@ -12,13 +12,9 @@ class ServiceRunner(ServiceTemplate):
     def __init__(self, **kwargs):
         self.client = OperetoClient()
         ServiceTemplate.__init__(self, **kwargs)
-        self._print_step_title('Start opereto test listener..')
         self.sflow_id = self.input['opereto_source_flow_id']
         self.remove_test_results_dir=False
-        self.op_state={}
-        if os.path.exists(self.state_file):
-            self.op_state = self._get_state()
-
+        self.op_state = self._get_state() or {}
 
     def validate_input(self):
 
@@ -50,7 +46,6 @@ class ServiceRunner(ServiceTemplate):
         self.parent_pid = self.input['parent_pid'] or self.input['pid']
         self.test_results_dir = self.input['test_results_path']
         self.debug_mode = self.input['debug_mode']
-        self.next_check_source_alive=0
 
         self.result_keys = process_result_keys
         self.status_keys = process_status_keys
@@ -106,9 +101,7 @@ class ServiceRunner(ServiceTemplate):
             "additionalProperties": True
         }
 
-        self.end_of_test_suite=False
-        self.op_state['test_suite_final_status'] = 'success'
-        self._save_state(self.op_state)
+        self.end_of_test_suite=None
         self.test_data = {}
         self.suite_links = []
         self._state = {}
@@ -141,18 +134,7 @@ class ServiceRunner(ServiceTemplate):
         self.client._call_rest_api('post', '/processes/{}/log'.format(pid), data=log_request_data,
                                        error='Failed to update test log (test pid = {})'.format(pid))
 
-    def _check_source_alive(self):
-        if self.next_check_source_alive>self.input['listener_frequency']*10:
-            self.next_check_source_alive=0
-            source_status = self.client.get_process_status(self.sflow_id)
-            if source_status!='in_process':
-                self.client.stop_process(pids=str(self.client.input['pid']), status='success')
-
-        self.next_check_source_alive+=1
-
     def _modify_record(self, test_record):
-
-        self._check_source_alive()
 
         testname = test_record['testname']
         test_input = test_record.get('test_input') or {}
@@ -163,10 +145,7 @@ class ServiceRunner(ServiceTemplate):
         test_pid = test_record.get('pid')
         if testname not in self._state:
             if not test_pid:
-
-                ## add test_runner_id
-
-                test_pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, pflow_id=test_ppid)
+                test_pid = self.client.create_process('opereto_test_listener_record', testname=testname, title=title, test_input=test_input, test_runner_id=test_ppid, pflow_id=test_ppid)
                 self.client.wait_to_start(test_pid)
             self._state[testname] = {
                 'ppid': test_ppid,
@@ -181,9 +160,6 @@ class ServiceRunner(ServiceTemplate):
             test_pid = self._state[testname]['pid']
 
         if self._state[testname]['status'] not in self.result_keys:
-
-            if status in self.result_keys:
-                time.sleep(self.client.input['listener_frequency'])
 
             if title!=self._state[testname]['title']:
                 ### TBD: add title change API call
@@ -243,53 +219,63 @@ class ServiceRunner(ServiceTemplate):
     def process(self):
 
         def process_results():
-            tests_json = os.path.join(self.test_results_dir, 'tests.json')
-            if os.path.exists(tests_json):
-                with open(tests_json, 'r') as tf:
-                    self.test_data = json.load(tf)
-                    try:
-                        validator = JsonSchemeValidator(self.test_data, self.tests_json_scheme)
-                        validator.validate()
-                    except Exception, e:
-                        print 'Invalid tests json file: {}'.format(e)
-                        return
 
-                    if 'test_records' in self.test_data:
-                        for test_record in self.test_data['test_records']:
-                            self._modify_record(test_record)
+            try:
+                tests_json = os.path.join(self.test_results_dir, 'tests.json')
+                if os.path.exists(tests_json):
+                    with open(tests_json, 'r') as tf:
+                        try:
+                            self.test_data = json.load(tf)
+                            self.op_state['test_data'] = self.test_data
+                            try:
+                                validator = JsonSchemeValidator(self.test_data, self.tests_json_scheme)
+                                validator.validate()
+                            except Exception, e:
+                                print 'Invalid tests json file: {}'.format(e)
+                                return
 
-                    if 'test_suite' in self.test_data:
-                        if 'status' in self.test_data['test_suite']:
-                            if self.test_data['test_suite']['status'] in self.result_keys:
-                                self.op_state['test_suite_final_status']=self.test_data['test_suite']['status']
-                                self._save_state(self.op_state)
-                        if 'links' in self.test_data['test_suite']:
-                            self.suite_links = self.test_data['test_suite']['links']
-            if self.debug_mode:
-                print('[DEBUG] content of tests.json: {}'.format(json.dumps(self.test_data)))
+                            if 'test_records' in self.test_data:
+                                for test_record in self.test_data['test_records']:
+                                    self._modify_record(test_record)
+
+                            if 'test_suite' in self.test_data:
+                                if 'status' in self.test_data['test_suite']:
+                                    self.op_state['test_suite_final_status']=self.test_data['test_suite']['status']
+                                if 'links' in self.test_data['test_suite']:
+                                    self.suite_links = self.test_data['test_suite']['links']
+                                    self.op_state['test_suite'] = self.suite_links
+                        finally:
+                            self._save_state(self.op_state)
+            finally:
+                self.end_of_test_suite = self.client.get_process_property(name='stop_listener_code')
+                if self.debug_mode:
+                    print('[DEBUG] content of tests.json: {}'.format(json.dumps(self.test_data)))
 
         while(True):
             process_results()
             time.sleep(self.client.input['listener_frequency'])
-
+            if self.end_of_test_suite:
+                print('Stopping listener process..')
+                break
 
     def setup(self):
+        self._print_step_title('Start opereto test listener..')
         if not os.path.exists(self.input['test_results_path']):
             make_directory(self.input['test_results_path'])
-            self.op_state = {'test_results_path': self.input['test_results_path']}
-            self._save_state(self.op_state)
+        self.op_state = {'test_suite_final_status': 'success', 'test_results_path': self.input['test_results_path'], 'test_data': {}, 'suite_links': []}
+        self._save_state(self.op_state)
 
     def teardown(self):
         if 'test_results_path' in self.op_state:
             remove_directory_if_exists(self.input['test_results_path'])
-            del self.op_state['test_results_path']
-            self._save_state(self.op_state)
+
         self._print_step_title('Opereto test listener stopped.')
 
-        print 'Final content of tests_json: {}'.format(json.dumps(self.test_data), indent=4)
-
-        for link in self.suite_links:
+        print 'Final content of tests_json: {}'.format(json.dumps(self.op_state['test_data']), indent=4)
+        suite_links = self.op_state.get('suite_links') or []
+        for link in suite_links:
             self._print_test_link(link)
+        print('Final listener status is {}'.format(self.op_state['test_suite_final_status']))
 
         if self.op_state['test_suite_final_status'] == 'success':
             return self.client.SUCCESS

@@ -39,5 +39,12 @@ item_properties:
   mandatory: true
   help: If checked, the listener prints additional debug info
 
+- key: stop_listener_code
+  value: false
+  type: boolean
+  direction: output
+  mandatory: false
+  help: If modified to true after listener has been started, listener will stop running
+
 timeout: 7200
 type: action
