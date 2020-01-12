@@ -51,7 +51,7 @@ class JunitToOperetoResults(object):
                     self.suite_status = 'error'
 
                 def _escape_name(name):
-                    return re.sub('[^0-9a-z-_]+', '-', name).lower()
+                    return re.sub('[^0-9A-Za-z-_]+', '-', name).lower()
 
                 for case in suite:
                     if case.classname:
