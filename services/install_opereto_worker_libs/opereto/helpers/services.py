@@ -117,8 +117,36 @@ class TaskRunner(ServiceTemplate):
     def _run_task(self):
         self._unimplemented_method()
 
+    def _is_agent_up_and_running(self, agent_id, iterations=30, interval_time=5):
+        self._print_step_title('Waiting for agent {} will be online..'.format(agent_id))
+        agent_is_up = False
+        for i in range(iterations):
+            try:
+                agent_status = self.client.get_agent_status(agent_id)
+                if agent_status['online']:
+                    agent_is_up = True
+                    break
+            except:
+                pass
+            time.sleep(interval_time)
+        if agent_is_up:
+            print('Agent is up and running.')
+        else:
+            print('Agent is not online.')
+        return agent_is_up
 
     def validate_input(self):
+
+        self.task_exitcode = 3
+        self.task_output = {}
+        self.parent_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
+        self.debug_mode = self.input['debug_mode']
+        self.listener_pid = None
+        self.parser_pid = None
+        self.listener_results_dir = os.path.join(self.input['opereto_workspace'], 'opereto_listener_results')
+        self.parser_results_directory = os.path.join(self.input['opereto_workspace'], 'opereto_parser_results')
+        self.test_results_directory = self.input['test_results_directory']
+        self.task_output_json = os.path.join(self.input['opereto_workspace'], 'opereto_task_output.json')
 
         self._replace_empty_dict_with_none(['task_service','test_parser_config'])
 
@@ -190,17 +218,7 @@ class TaskRunner(ServiceTemplate):
                 self.client.wait_to_end([self.listener_pid])
 
     def setup(self):
-        self.task_exitcode = 3
-        self.task_output = {}
-        self.parent_pid = self.input['opereto_parent_flow_id'] or self.input['pid']
-        self.debug_mode = self.input['debug_mode']
-        self.listener_pid = None
-        self.parser_pid = None
-        self.listener_results_dir = os.path.join(self.input['opereto_workspace'], 'opereto_listener_results')
-        self.parser_results_directory = os.path.join(self.input['opereto_workspace'], 'opereto_parser_results')
-        self.test_results_directory = self.input['test_results_directory']
         make_directory(self.parser_results_directory)
-        self.task_output_json = os.path.join(self.input['opereto_workspace'], 'opereto_task_output.json')
         make_directory(self.listener_results_dir)
         self._setup()
         self._run_service_set(self.input['pre_task_services'])
