@@ -74,6 +74,7 @@ class ServiceRunner(TaskRunner):
     def _run_task(self):
         for task_service in self.input['task_services']:
             task_service_input = task_service.get('input') or {}
+            print('Running task service: {}'.format(task_service.get('title') or task_service['service']))
             pid = self.client.create_process(service=task_service['service'], agent=self.worker_agent_id, title=task_service.get('title'), **task_service_input)
             if not self.client.is_success(pid):
                 return self.client.FAILURE
@@ -84,6 +85,7 @@ class ServiceRunner(TaskRunner):
             service = self.input['worker_config']['setup']
             input = service.get('input') or {}
             agent = service.get('agents') or self.input['opereto_agent']
+            print('Running worker setup service: {}'.format(service.get('title') or service['service']))
             pid = self.client.create_process(service=service['service'], agent=agent,
                                              title=service.get('title'), **input)
             if not self.client.is_success(pid):
@@ -100,6 +102,7 @@ class ServiceRunner(TaskRunner):
             agent = service.get('agents') or self.input['opereto_agent']
             input = service.get('input') or {}
             input.update({service['agent_id_property']: self.worker_agent_id})
+            print('Running worker teardown service: {}'.format(service.get('title') or service['service']))
             pid = self.client.create_process(service=service['service'], agent=agent,
                                              title=service.get('title'), **input)
             if not self.client.is_success(pid):

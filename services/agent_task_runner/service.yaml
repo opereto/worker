@@ -4,6 +4,7 @@ cmd:
     default: python -u run.py
   path:
     default: ~/.opereto/operetovenv
+
 termination_cmd:
   type: python-venv
   command:
@@ -136,7 +137,7 @@ item_properties:
     type: json
     value: {}
 
-
-
-timeout: 3600
 type: action
+timeout: 3600
+
+
