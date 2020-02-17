@@ -1,7 +1,3 @@
-#cmd:
-#  type: shell
-#  command:
-#    default: bash run.sh
 cmd:
   type: shell
   command:
