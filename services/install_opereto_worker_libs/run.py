@@ -12,6 +12,9 @@ def install_opereto_lib():
     per_os_module_to_install = {
         'rhel7.2': {
             'paramiko': 'paramiko==2.1.2'
+        },
+        'rhel6.9': {
+            'PIL': 'Pillow==6.2.2',
         }
     }
 
@@ -92,8 +95,8 @@ def install_opereto_lib():
         (name, version,id) = get_current_os()
 
         print 'Current OS: {} {}, {}'.format(name, version,id)
-        if name=='Red Hat Enterprise Linux Server' and version=='7.2':
-            os_name='rhel7.2'
+        if name=='Red Hat Enterprise Linux Server':
+            os_name='rhel{}'.format(version)
 
         if os_name:
             module_to_install.update(per_os_module_to_install[os_name])
@@ -106,7 +109,8 @@ def install_opereto_lib():
                     print >> sys.stderr, 'Python module [%s] is not installed.' % module
 
         else:
-            _local('cd %s && virtualenv venv && . venv/bin/activate && pip install --upgrade pip ; deactivate'%(directory),ignore=False)
+            _local('cd %s && virtualenv venv -p python2.7 && . venv/bin/activate && pip install --upgrade pip ; deactivate'%(directory),ignore=False)
+
             for import_name, module in module_to_install.items():
                 _local('cd %s && . venv/bin/activate && pip install %s && deactivate'%(directory, module),ignore=True)
                 if _local('cd %s && . venv/bin/activate && python -c "import %s" && deactivate'%(directory, import_name))!=0:

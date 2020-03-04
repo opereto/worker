@@ -40,18 +40,8 @@ if [ $os_platform == "ubuntu" ]; then
     else
         echo ""
     fi
-
-elif [ $os_platform == "centos" ]; then
-    if [[ $OSREL == *"6"* ]]; then
-        echo "Current distribution is not supported."
-        exit 1;
-    fi
-
-elif [ $os_platform == "rh" ]; then
-    if [[ $OSREL == *"6"* ]]; then
-        echo "Current distribution is not supported."
-        exit 1;
-    fi
+else
+    echo "Installing opereto lib on $os_platform. Assuming that Python2.7 is installed"
 fi
 
 python2.7 -u run.py
