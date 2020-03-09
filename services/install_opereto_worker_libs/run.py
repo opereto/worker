@@ -98,7 +98,7 @@ def install_opereto_lib():
         if name=='Red Hat Enterprise Linux Server':
             os_name='rhel{}'.format(version)
 
-        if os_name:
+        if os_name and per_os_module_to_install.get(os_name):
             module_to_install.update(per_os_module_to_install[os_name])
 
         if is_windows():
@@ -117,7 +117,7 @@ def install_opereto_lib():
                     print >> sys.stderr, 'Python module [%s] is not installed.'%module
 
 
-    def create_virtual_rlauto_env(current_version_dir):
+    def create_virtual_env(current_version_dir):
         _remove_dir(current_version_dir)
         _create_dir_if_not_exists(current_version_dir)
         _copy_opereto_venv_contents(current_version_dir)
@@ -152,7 +152,7 @@ def install_opereto_lib():
             _local('sudo pip install pyopereto')
 
         current_version_dir= os.path.join(VIRT_ENV_DIR,release)
-        create_virtual_rlauto_env(current_version_dir)
+        create_virtual_env(current_version_dir)
 
         if FAILURE:
             return 3
