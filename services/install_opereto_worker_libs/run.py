@@ -20,7 +20,7 @@ def install_opereto_lib():
 
     module_to_install = {
         'yaml' : 'pyyaml==3.13',
-        'pyopereto': 'pyopereto==1.0.80',
+        'pyopereto': 'pyopereto==1.0.89',
         'requests': 'requests==2.19.1',
         'boto': 'boto==2.49.0',
         'paramiko': 'paramiko==2.4.1',
