@@ -20,7 +20,7 @@ def install_opereto_lib():
 
     module_to_install = {
         'yaml' : 'pyyaml==3.13',
-        'pyopereto': 'pyopereto==1.0.89',
+        'pyopereto': 'pyopereto==1.0.106',
         'requests': 'requests==2.19.1',
         'boto': 'boto==2.49.0',
         'paramiko': 'paramiko==2.4.1',
@@ -138,6 +138,7 @@ def install_opereto_lib():
             (name, version,id) = get_current_os()
             install_list = 'sudo apt-get install -qy python-six curl python-setuptools gcc build-essential python-dev python-pip libffi-dev libssl-dev'
             _local(install_list,ignore=False)
+            _local('sudo pip install -U pip')
             _local('sudo pip install virtualenv', ignore=False)
 
         elif is_windows():
