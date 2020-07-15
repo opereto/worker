@@ -138,7 +138,7 @@ def install_opereto_lib():
             (name, version,id) = get_current_os()
             install_list = 'sudo apt-get install -qy python-six curl python-setuptools gcc build-essential python-dev python-pip libffi-dev libssl-dev'
             _local(install_list,ignore=False)
-            _local('sudo pip install -U pip', ignore=False)
+            _local('sudo pip install -U pip')
             _local('sudo pip install virtualenv', ignore=False)
 
         elif is_windows():
