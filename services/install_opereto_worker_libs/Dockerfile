@@ -30,4 +30,12 @@ WORKDIR /opt/opereto-agent-latest
 
 RUN apt-get -yy update && apt-get install -yy openjdk-8-jre && update-alternatives --set java  /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -token $opereto_token -loglevel $log_level -log console
+ENV javaParams "-Xms1000m -Xmx1000m"
+ENV opereto_host ""
+ENV agent_name ""
+ENV opereto_user ""
+ENV opereto_password ""
+ENV log_level="info"
+
+CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -u $opereto_user -p $opereto_password -loglevel $log_level -log console
+
