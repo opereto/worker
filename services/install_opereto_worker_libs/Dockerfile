@@ -33,4 +33,5 @@ ENV opereto_user ""
 ENV opereto_password ""
 ENV log_level="info"
 
+
 CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -u $opereto_user -p $opereto_password -loglevel $log_level -log console
