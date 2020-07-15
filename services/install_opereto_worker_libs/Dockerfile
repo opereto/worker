@@ -23,7 +23,7 @@ COPY . ${opereto_workspace}/
 RUN cd $opereto_workspace && python2.7 -u run.py
 
 RUN cd /opt && \
-    curl -O https://s3.amazonaws.com/opereto_downloads/opereto-agent-latest.jar && \
+    curl -O https://s3.amazonaws.com/opereto_downloads/2.0.108/opereto-agent-latest.jar && \
     chmod 777 -R *
 
 WORKDIR /opt/opereto-agent-latest

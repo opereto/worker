@@ -20,7 +20,7 @@ def install_opereto_lib():
 
     module_to_install = {
         'yaml' : 'pyyaml==3.13',
-        'pyopereto': 'pyopereto==1.0.106',
+        'pyopereto': 'pyopereto==1.0.94',
         'requests': 'requests==2.19.1',
         'boto': 'boto==2.49.0',
         'paramiko': 'paramiko==2.4.1',
@@ -143,14 +143,14 @@ def install_opereto_lib():
 
         elif is_windows():
             _local('pip install virtualenv', ignore=False)
-            _local('pip install pyopereto')
+            _local('pip install pyopereto==1.0.94')
 
         else:
             _local('sudo yum install -y python-virtualenv python-setuptools gcc libffi python-devel openssl-devel')
             _local('easy_install pip')
 
         if not is_windows():
-            _local('sudo pip install pyopereto')
+            _local('sudo pip install pyopereto==1.0.94')
 
         current_version_dir= os.path.join(VIRT_ENV_DIR,release)
         create_virtual_env(current_version_dir)
