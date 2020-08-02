@@ -178,7 +178,7 @@ Apache License
    Opereto worker libs
    This library includes the opereto python worker virtualenv and libs developed by the Opereto team.
 
-   Copyright 2014-2019 Opereto Ltd. (www.opereto.com)
+   Copyright 2014-2020 Opereto Ltd. (www.opereto.com)
 
 
    Licensed under the Apache License, Version 2.0 (the "License");
