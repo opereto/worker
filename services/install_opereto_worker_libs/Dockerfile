@@ -31,6 +31,4 @@ WORKDIR /opt/opereto-agent-latest
 
 RUN apt-get -yy update && apt-get install -yy openjdk-8-jre && update-alternatives --set java  /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-
-CMD java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -token $opereto_token -loglevel $log_level -log console
-
+CMD echo $opereto_token > ~/.opereto.token && java $javaParams -jar /opt/opereto-agent-latest.jar -host $opereto_host -name $agent_name -token $opereto_token -loglevel $log_level -log console
