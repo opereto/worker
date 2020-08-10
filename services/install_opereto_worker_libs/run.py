@@ -38,7 +38,7 @@ def install_opereto_lib():
         'oauth2client': 'oauth2client==4.1.2',
         'apiclient': 'google-api-python-client==1.7.4',
         'junitparser': 'junitparser==1.2.2',
-        'kubernetes':'kubernetes==5.0.0'
+        'kubernetes':'kubernetes==11.0.0'
     }
 
 
